@@ -4,97 +4,106 @@ package service
 import (
 	"context"
 	"fmt"
-	"week1/app/blog/storage"
 	"week1/app/blog/pb"
 	"github.com/google/uuid"
-	"errors"
+    "database/sql"
 )
 
 type BlogGRPCService struct{
 	pb.UnimplementedBlogServiceServer
+    DB *sql.DB
 }
 
-func NewBlogGRPCService() *BlogGRPCService {
-	return &BlogGRPCService{}
+func NewBlogGRPCService(db  *sql.DB) *BlogGRPCService {
+	return &BlogGRPCService{DB: db}
 }
 
 func (s *BlogGRPCService) GetPosts(ctx context.Context, req *pb.Empty) (*pb.PostList, error) {
-    posts := storage.Posts
-    protoPosts := make([]*pb.Post, len(posts))
-
-    for i, p := range posts {
-        protoPosts[i] = &pb.Post{
-            Id:      p.ID,
-            Title:   p.Title,
-            Content: p.Content,
-        }
+    blogs, err := s.DB.Query("SELECT * FROM blog")
+    if err != nil {
+        fmt.Println(err)
     }
+    defer blogs.Close()
 
-    return &pb.PostList{Posts: protoPosts}, nil
+    fmt.Println("blogs", blogs)
+    
+    var postList []*pb.Post
+    for blogs.Next() {
+        var post pb.Post
+        err := blogs.Scan(&post.Id, &post.Title, &post.Content)
+        if err != nil {
+            fmt.Println(err)
+        }
+        postList = append(postList, &post)
+    }
+    return &pb.PostList{Posts: postList}, nil
+
 }
+
 
 func (s *BlogGRPCService) GetPost(ctx context.Context, req *pb.GetPostRequest) (*pb.Post, error) {
     id := req.Id
-    fmt.Println("GetPostByID", id)
-    for _, p := range storage.Posts {
-        if p.ID == id {
-            return &pb.Post{
-                Id:      p.ID,
-                Title:   p.Title,
-                Content: p.Content,
-            }, nil
-        }
+
+    blog := s.DB.QueryRow("SELECT * FROM blog WHERE id = ?", id) 
+    var post pb.Post
+    err := blog.Scan(&post.Id, &post.Title, &post.Content)
+    if err != nil {
+        fmt.Println(err)
     }
-    return nil, errors.New("post not found")
+    return &post, nil
+
 }
 
 func (s *BlogGRPCService) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb.Post, error) {
-    newPost := storage.Post{
-        ID:      generateUniqueID(),
-        Title:   req.Title,
-        Content: req.Content,
-    }
-    storage.Posts = append(storage.Posts, newPost)
+    id := generateUniqueID()
+    title := req.Title
+    content := req.Content
 
-    // Return the protobuf equivalent of the new post
+    insert, err := s.DB.Query("INSERT INTO blog (id, title, content) VALUES (?, ?, ?)", id, title, content)
+    if err != nil {
+        fmt.Println(err)
+    }
+
+    defer insert.Close()
+
     return &pb.Post{
-        Id:      newPost.ID,
-        Title:   newPost.Title,
-        Content: newPost.Content,
+        Id: id,
+        Title:   title,
+        Content: content,
     }, nil
+
 }
 
 func (s *BlogGRPCService) DeletePost(ctx context.Context, req *pb.GetPostRequest) (*pb.Empty, error) {
-	id := req.Id
+    id := req.Id
 
-	for i, p := range storage.Posts {
-		if p.ID == id {
-			storage.Posts = append(storage.Posts[:i], storage.Posts[i+1:]...)
-			break
-		}
-	}
+    delete, err := s.DB.Query("DELETE FROM blog WHERE id = ?", id);
+    if err != nil {
+        fmt.Println(err)
+    }
 
-	return &pb.Empty{}, nil
+    defer delete.Close()
+
+    return &pb.Empty{}, nil
 }
 
 func (s *BlogGRPCService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequest) (*pb.Post, error) {
-	id := req.Id
-	fmt.Println("UpdatePostByID", req)
-	fmt.Println("id", id)
+    id := req.Id
+    title := req.Title
+    content := req.Content
 
-	for i, p := range storage.Posts {
-		if p.ID == id {
-			storage.Posts[i].Title = req.Title
-			storage.Posts[i].Content = req.Content
-			break
-		}
-	}
+    update, err := s.DB.Query("UPDATE blog SET title = ?, content = ? WHERE id = ?", title, content, id)
+    if err != nil {
+        fmt.Println(err)
+    }
 
-	return &pb.Post{
-		Id:      id,
-		Title:   req.Title,
-		Content: req.Content,
-	}, nil
+    defer update.Close()
+
+    return &pb.Post{
+        Id: id,
+        Title:   title,
+        Content: content,
+    }, nil
 }
 
 func generateUniqueID() string {
