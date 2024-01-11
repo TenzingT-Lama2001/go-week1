@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package blog;
+
+//protoc --go_out=. --go-grpc_out=. blog.proto
+option go_package = "app/blog/pb";
+
+message Post {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+}
+
+service BlogService {
+    rpc GetPosts(Empty) returns (PostList) {}
+    rpc GetPost(GetPostRequest) returns (Post) {}
+    rpc CreatePost(CreatePostRequest) returns (Post) {}
+    rpc DeletePost(GetPostRequest) returns (Empty) {}
+    rpc UpdatePost(UpdatePostRequest) returns (Post) {}
+}
+
+message Empty {}
+
+message GetPostRequest {
+    string id = 1;
+}
+
+message CreatePostRequest{
+    string title = 1;
+    string content = 2;
+}
+
+message PostList {
+    repeated Post posts = 1;
+}
+
+message UpdatePostRequest {
+    string id = 1;
+    string title = 2;
+    string content = 3;
+}
