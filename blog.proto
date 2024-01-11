@@ -11,14 +11,6 @@ message Post {
     string content = 3;
 }
 
-service BlogService {
-    rpc GetPosts(Empty) returns (PostList) {}
-    rpc GetPost(GetPostRequest) returns (Post) {}
-    rpc CreatePost(CreatePostRequest) returns (Post) {}
-    rpc DeletePost(GetPostRequest) returns (Empty) {}
-    rpc UpdatePost(UpdatePostRequest) returns (Post) {}
-}
-
 message Empty {}
 
 message GetPostRequest {

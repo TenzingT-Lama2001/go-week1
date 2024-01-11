@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package blog;
+
+import "blog.proto";
+
+//protoc --go_out=. --go-grpc_out=. blog.proto
+option go_package = "app/blog/pb";
+
+
+service BlogService {
+    rpc GetPosts(Empty) returns (PostList) {}
+    rpc GetPost(GetPostRequest) returns (Post) {}
+    rpc CreatePost(CreatePostRequest) returns (Post) {}
+    rpc DeletePost(GetPostRequest) returns (Empty) {}
+    rpc UpdatePost(UpdatePostRequest) returns (Post) {}
+}
