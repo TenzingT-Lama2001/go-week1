@@ -97,13 +97,13 @@ func (s *BlogGRPCService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequ
 
 	if req.Title != nil {
 		title = *req.Title
-		query += "title = ?"
+		query += "title = ?, "
 		params = append(params, title)
 	}
 
 	if req.Content != nil {
 		content = *req.Content
-		query += "content = ?"
+		query += "content = ? "
 		params = append(params, content)
 
 	}
@@ -129,7 +129,7 @@ func (s *BlogGRPCService) UpdatePost(ctx context.Context, req *pb.UpdatePostRequ
 	}
 
 	if affectedRows == 0 {
-		return nil, errors.New("post not updated")
+		return nil, errors.New("no rows affected. Either post is already updated or post does not exist")
 	}
 
 	return &pb.Post{
