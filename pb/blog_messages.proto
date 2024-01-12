@@ -1,9 +1,9 @@
 syntax = "proto3";
 
-package blog;
+package pb;
 
 //protoc --go_out=. --go-grpc_out=. blog.proto
-option go_package = "app/blog/pb";
+option go_package = "../app/gen";
 
 message Post {
     string id = 1;
@@ -28,6 +28,15 @@ message PostList {
 
 message UpdatePostRequest {
     string id = 1;
-    string title = 2;
-    string content = 3;
+    optional string title = 2;
+    optional string content = 3;
+}
+
+message PostExistsRequest {
+    string title = 1;
+    
+}
+
+message PostExistsResponse {
+    bool exists = 1;
 }

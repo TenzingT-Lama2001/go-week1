@@ -1,16 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net"
-	"time"
-	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+	"week1/app/controller"
+	"week1/app/database"
+	pb "week1/app/gen"
+	"week1/app/routes"
+	"week1/app/service"
+
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 	"google.golang.org/grpc"
-	"week1/app/blog/api"
-	"week1/app/blog/pb"
-	"week1/app/blog/service"
 )
 
 // App struct to hold dependencies like the database
@@ -19,14 +21,12 @@ type App struct {
 }
 
 func main() {
-	db, err := sql.Open("mysql", "root:Password!?@#$123@tcp(localhost:3306)/blogs")
-	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
-	}
 
-	db.SetConnMaxLifetime(time.Minute * 3)
-	db.SetMaxOpenConns(10)
-	db.SetMaxIdleConns(10)
+	// Connect to the database
+	db := database.NewDB()
+
+	// Close the database connection when the main function finishes
+	defer database.CloseDB(db)
 
 	// Create an instance of the App struct
 	app := &App{DB: db}
@@ -64,13 +64,13 @@ func startHTTPServer() {
 	// Create the gRPC client
 	blogServiceClient := pb.NewBlogServiceClient(conn)
 
-	blogAPI := api.NewBlogController(blogServiceClient)
+	blogController := controller.NewBlogController(blogServiceClient)
 
 	// Create a new gin router
 	router := gin.Default()
 
 	// Setup routes for the blog API
-	blogAPI.SetupRoutes(router)
+	routes.SetupBlogRoutes(router, blogController)
 
 	// Start the HTTP server
 	err = router.Run(":8081")

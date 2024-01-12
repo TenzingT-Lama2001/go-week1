@@ -4,7 +4,7 @@
 // - protoc             v3.12.4
 // source: blog_service.proto
 
-package pb
+package gen
 
 import (
 	context "context"
@@ -19,11 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	BlogService_GetPosts_FullMethodName   = "/blog.BlogService/GetPosts"
-	BlogService_GetPost_FullMethodName    = "/blog.BlogService/GetPost"
-	BlogService_CreatePost_FullMethodName = "/blog.BlogService/CreatePost"
-	BlogService_DeletePost_FullMethodName = "/blog.BlogService/DeletePost"
-	BlogService_UpdatePost_FullMethodName = "/blog.BlogService/UpdatePost"
+	BlogService_GetPosts_FullMethodName   = "/pb.BlogService/GetPosts"
+	BlogService_GetPost_FullMethodName    = "/pb.BlogService/GetPost"
+	BlogService_CreatePost_FullMethodName = "/pb.BlogService/CreatePost"
+	BlogService_DeletePost_FullMethodName = "/pb.BlogService/DeletePost"
+	BlogService_UpdatePost_FullMethodName = "/pb.BlogService/UpdatePost"
+	BlogService_PostExists_FullMethodName = "/pb.BlogService/PostExists"
 )
 
 // BlogServiceClient is the client API for BlogService service.
@@ -35,6 +36,7 @@ type BlogServiceClient interface {
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*Post, error)
 	DeletePost(ctx context.Context, in *GetPostRequest, opts ...grpc.CallOption) (*Empty, error)
 	UpdatePost(ctx context.Context, in *UpdatePostRequest, opts ...grpc.CallOption) (*Post, error)
+	PostExists(ctx context.Context, in *PostExistsRequest, opts ...grpc.CallOption) (*PostExistsResponse, error)
 }
 
 type blogServiceClient struct {
@@ -90,6 +92,15 @@ func (c *blogServiceClient) UpdatePost(ctx context.Context, in *UpdatePostReques
 	return out, nil
 }
 
+func (c *blogServiceClient) PostExists(ctx context.Context, in *PostExistsRequest, opts ...grpc.CallOption) (*PostExistsResponse, error) {
+	out := new(PostExistsResponse)
+	err := c.cc.Invoke(ctx, BlogService_PostExists_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BlogServiceServer is the server API for BlogService service.
 // All implementations must embed UnimplementedBlogServiceServer
 // for forward compatibility
@@ -99,6 +110,7 @@ type BlogServiceServer interface {
 	CreatePost(context.Context, *CreatePostRequest) (*Post, error)
 	DeletePost(context.Context, *GetPostRequest) (*Empty, error)
 	UpdatePost(context.Context, *UpdatePostRequest) (*Post, error)
+	PostExists(context.Context, *PostExistsRequest) (*PostExistsResponse, error)
 	mustEmbedUnimplementedBlogServiceServer()
 }
 
@@ -120,6 +132,9 @@ func (UnimplementedBlogServiceServer) DeletePost(context.Context, *GetPostReques
 }
 func (UnimplementedBlogServiceServer) UpdatePost(context.Context, *UpdatePostRequest) (*Post, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdatePost not implemented")
+}
+func (UnimplementedBlogServiceServer) PostExists(context.Context, *PostExistsRequest) (*PostExistsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostExists not implemented")
 }
 func (UnimplementedBlogServiceServer) mustEmbedUnimplementedBlogServiceServer() {}
 
@@ -224,11 +239,29 @@ func _BlogService_UpdatePost_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BlogService_PostExists_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PostExistsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BlogServiceServer).PostExists(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BlogService_PostExists_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BlogServiceServer).PostExists(ctx, req.(*PostExistsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BlogService_ServiceDesc is the grpc.ServiceDesc for BlogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var BlogService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "blog.BlogService",
+	ServiceName: "pb.BlogService",
 	HandlerType: (*BlogServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -250,6 +283,10 @@ var BlogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdatePost",
 			Handler:    _BlogService_UpdatePost_Handler,
+		},
+		{
+			MethodName: "PostExists",
+			Handler:    _BlogService_PostExists_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
